@@ -11,3 +11,4 @@ pytest-asyncio
 langchain
 langchain-openai
 openai
+pinecone

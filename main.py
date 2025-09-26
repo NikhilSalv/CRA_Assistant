@@ -7,6 +7,14 @@ import logging
 import json
 import sys
 
+import os
+from pinecone import Pinecone, ServerlessSpec
+
+pc = Pinecone(
+    api_key=os.environ["PINECONE_API_KEY"],
+    environment="us-east-1"
+)
+
 # Configure logging to work with Uvicorn
 logger = logging.getLogger("cra_assistant")
 logger.setLevel(logging.INFO)
@@ -94,9 +102,20 @@ async def process_cra_query(request: CRARequest):
     
     # Also use logger
     logger.info("=" * 50)
-    logger.info(f"{prompt} ______________________")
-    # logger.info("CRA QUERY REQUEST RECEIVED")
-    # logger.info("=" * 50)
+    # logger.info(f"{prompt} ______________________")
+    logger.info(pc.list_indexes().names())
+    logger.info("HI THIS IS A TEST TO SEE IF THE PINECONE INDEX IS WORKING")
+
+    index_name="cra-index"
+    dense_index = pc.Index(index_name)
+
+
+    # View stats for the index
+    stats = dense_index.describe_index_stats()
+    logger.info(stats)
+
+    # index_info = pc.describe_index("cra-index")
+    # logger.info(index_info)
     
     try:
         # Placeholder logic - replace with your actual CRA processing
@@ -106,8 +125,6 @@ async def process_cra_query(request: CRARequest):
             response_text += f" with context: {request.context}"
         
         # Log the response
-        print(f"Response generated: {response_text}")
-        print("=" * 50)
         logger.info(f"Response generated: {response_text}")
         logger.info("=" * 50)
         
