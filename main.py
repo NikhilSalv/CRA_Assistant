@@ -81,7 +81,7 @@ class HealthResponse(BaseModel):
 
 class CRARequest(BaseModel):
     query: str
-    context: Optional[str] = None
+    # context: Optional[str] = None
 
 class CRAResponse(BaseModel):
     response: str
@@ -132,7 +132,10 @@ async def process_cra_query(request: CRARequest):
         # Placeholder logic - replace with your actual CRA processing
         response_text = f"Processing query: {request.query}"
 
-        query = "What is the fundamental right protected under GDPR?"
+        # query = "What is the fundamental right protected under GDPR?"
+        query = request.query
+        # logger.info("HI THIS IS A TEST TO SEE IF THE QUERY IS BEING RECEIVED")
+        # logger.info(query)
 
         query_vector = embedding.embed_query(response_text)
         # logger.info("=" * 50)
@@ -148,7 +151,7 @@ async def process_cra_query(request: CRARequest):
 
 # Format retrieved context from Pinecone
         context = "\n\n".join([hit["metadata"]["text"] for hit in results["matches"]])
-        logger.info("=" * 50)
+        # logger.info("=" * 50)
         # logger.info("HI THIS IS A TEST TO SEE IF THE CONTEXT IS BEING RETRIEVED AND FORMATTED")
 
         # logger.info(context)
@@ -157,13 +160,25 @@ async def process_cra_query(request: CRARequest):
         question=query,
         context=context)
 
-        response = llm.invoke(messages)
+        # logger.info("HI THIS IS A TEST TO SEE IF THE  PROMPT AND MESSAGES ARE BEING FORMATTED")
+        # logger.info(messages)
+
+        response = llm.invoke(messages, logprobs=True)
         logger.info("HI THIS IS A TEST TO SEE IF THE LLM RESPONSE IS BEING GENERATED")
         response_text = response.content
         logger.info(response_text)
 
-        if request.context:
-            response_text += f" with context: {request.context}"
+        # logger.info("THIS IS A TEST TO SEE IF THE RESPONSE METADATA")
+        # logger.info(response.response_metadata)
+
+        import math
+        tokens = response.response_metadata["logprobs"]["content"]
+        probs = [math.exp(t["logprob"]) for t in tokens]
+        avg_conf = sum(probs) / len(probs)
+        logger.info(f"Average confidence: {avg_conf}")
+
+        # if request.context:
+        #     response_text += f" with context: {request.context}"
         
         # Log the response
         logger.info(f"Response generated: {response_text}")
@@ -171,7 +186,7 @@ async def process_cra_query(request: CRARequest):
         
         return CRAResponse(
             response=response_text,
-            confidence=0.85
+            confidence= avg_conf * 100
         )
     except Exception as e:
         error_msg = f"Error processing CRA query: {str(e)}"
