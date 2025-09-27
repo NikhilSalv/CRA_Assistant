@@ -1,27 +1,34 @@
+
+import json
+import sys
+import os
+import math
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import uvicorn
 import logging
-import json
-import sys
 
-import os
 from pinecone import Pinecone, ServerlessSpec
 
+from langchain import hub
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 
+
+
+prompt = hub.pull("rlm/rag-prompt")
 
 embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-
 # Initialize LLM
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-
-
+# Initialize Pinecone
 pc = Pinecone(
     api_key=os.environ["PINECONE_API_KEY"],
     environment="us-east-1"
@@ -50,14 +57,6 @@ if not logger.handlers:
 logger.propagate = False
 
 
-from langchain import hub
-prompt = hub.pull("rlm/rag-prompt")
-
-from langchain_openai import ChatOpenAI
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
-# llm = ChatOpenAI()
-
 # Create FastAPI instance
 app = FastAPI(
     title="CRA Assistant API",
@@ -81,7 +80,6 @@ class HealthResponse(BaseModel):
 
 class CRARequest(BaseModel):
     query: str
-    # context: Optional[str] = None
 
 class CRAResponse(BaseModel):
     response: str
@@ -122,7 +120,7 @@ async def process_cra_query(request: CRARequest):
     dense_index = pc.Index(index_name)
 
     # View stats for the index
-    stats = dense_index.describe_index_stats()
+    # stats = dense_index.describe_index_stats()
     # logger.info(stats)
 
     # index_info = pc.describe_index("cra-index")
@@ -130,14 +128,15 @@ async def process_cra_query(request: CRARequest):
     
     try:
         # Placeholder logic - replace with your actual CRA processing
-        response_text = f"Processing query: {request.query}"
+ 
 
         # query = "What is the fundamental right protected under GDPR?"
         query = request.query
+        logger.info(f"Processing query: {query}")
         # logger.info("HI THIS IS A TEST TO SEE IF THE QUERY IS BEING RECEIVED")
         # logger.info(query)
 
-        query_vector = embedding.embed_query(response_text)
+        query_vector = embedding.embed_query(query)
         # logger.info("=" * 50)
         # logger.info("HI THIS IS A TEST TO SEE IF THE QUERY IS BEING EMBEDDED")
         # logger.info(query_vector[:3])
@@ -151,9 +150,7 @@ async def process_cra_query(request: CRARequest):
 
 # Format retrieved context from Pinecone
         context = "\n\n".join([hit["metadata"]["text"] for hit in results["matches"]])
-        # logger.info("=" * 50)
         # logger.info("HI THIS IS A TEST TO SEE IF THE CONTEXT IS BEING RETRIEVED AND FORMATTED")
-
         # logger.info(context)
 
         messages = prompt.format_messages(
@@ -171,7 +168,6 @@ async def process_cra_query(request: CRARequest):
         # logger.info("THIS IS A TEST TO SEE IF THE RESPONSE METADATA")
         # logger.info(response.response_metadata)
 
-        import math
         tokens = response.response_metadata["logprobs"]["content"]
         probs = [math.exp(t["logprob"]) for t in tokens]
         avg_conf = sum(probs) / len(probs)
@@ -188,6 +184,7 @@ async def process_cra_query(request: CRARequest):
             response=response_text,
             confidence= avg_conf * 100
         )
+        
     except Exception as e:
         error_msg = f"Error processing CRA query: {str(e)}"
         print(error_msg)
