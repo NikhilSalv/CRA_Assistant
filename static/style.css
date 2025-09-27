@@ -26,14 +26,93 @@ body {
 .header {
     text-align: center;
     margin-bottom: 30px;
+    position: relative;
 }
 
 .title {
     font-size: 2.5rem;
     font-weight: 700;
     color: #1E88E5;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     line-height: 1.2;
+}
+
+/* Button Group */
+.button-group {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+/* Action Buttons */
+.action-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    text-decoration: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: none;
+    cursor: pointer;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    color: white;
+    text-decoration: none;
+}
+
+.action-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.action-button svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.action-button span {
+    font-family: inherit;
+}
+
+/* GitHub Button */
+.github-button {
+    background-color: #1E88E5;
+    box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);
+}
+
+.github-button:hover {
+    background-color: #1976D2;
+    box-shadow: 0 6px 20px rgba(30, 136, 229, 0.4);
+}
+
+.github-button:active {
+    box-shadow: 0 2px 8px rgba(30, 136, 229, 0.3);
+}
+
+/* EUR-Lex Button */
+.eurlex-button {
+    background-color: #2E7D32;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.eurlex-button:hover {
+    background-color: #1B5E20;
+    box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
+}
+
+.eurlex-button:active {
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
 }
 
 /* Chat container */
@@ -206,6 +285,20 @@ body {
         font-size: 2rem;
     }
     
+    .button-group {
+        gap: 8px;
+    }
+    
+    .action-button {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    .action-button svg {
+        width: 18px;
+        height: 18px;
+    }
+    
     .chat-messages {
         padding: 20px;
     }
@@ -222,6 +315,25 @@ body {
 @media (max-width: 480px) {
     .title {
         font-size: 1.5rem;
+    }
+    
+    .button-group {
+        gap: 6px;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .action-button {
+        padding: 8px 14px;
+        font-size: 12px;
+        width: 100%;
+        max-width: 250px;
+        justify-content: center;
+    }
+    
+    .action-button svg {
+        width: 16px;
+        height: 16px;
     }
     
     .chat-messages {
