@@ -6,6 +6,8 @@ import math
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List, Optional
 import uvicorn
@@ -73,6 +75,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Pydantic models
 class HealthResponse(BaseModel):
     status: str
@@ -86,21 +91,19 @@ class CRAResponse(BaseModel):
     confidence: Optional[float] = None
 
 # Routes
-@app.get("/", response_model=HealthResponse)
+@app.get("/")
 async def root():
-    """Root endpoint to check if the API is running"""
-    return HealthResponse(
-        status="success",
-        message="CRA Assistant API is running!"
-    )
+    """Serve the frontend application"""
+    return FileResponse('static/index.html')
 
-@app.get("/health", response_model=HealthResponse)
+@app.get("/api/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint"""
     return HealthResponse(
         status="healthy",
         message="API is healthy and ready to serve requests"
     )
+
 
 @app.post("/cra/query", response_model=CRAResponse)
 async def process_cra_query(request: CRARequest):
