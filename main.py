@@ -149,9 +149,18 @@ async def process_cra_query(request: CRARequest):
 # Format retrieved context from Pinecone
         context = "\n\n".join([hit["metadata"]["text"] for hit in results["matches"]])
         logger.info("=" * 50)
-        logger.info("HI THIS IS A TEST TO SEE IF THE CONTEXT IS BEING RETRIEVED AND FORMATTED")
+        # logger.info("HI THIS IS A TEST TO SEE IF THE CONTEXT IS BEING RETRIEVED AND FORMATTED")
 
-        logger.info(context)
+        # logger.info(context)
+
+        messages = prompt.format_messages(
+        question=query,
+        context=context)
+
+        response = llm.invoke(messages)
+        logger.info("HI THIS IS A TEST TO SEE IF THE LLM RESPONSE IS BEING GENERATED")
+        response_text = response.content
+        logger.info(response_text)
 
         if request.context:
             response_text += f" with context: {request.context}"
