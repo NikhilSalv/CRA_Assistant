@@ -1,33 +1,30 @@
 
 import json
-import sys
-import os
+import logging
 import math
+import os
+import sys
+from typing import Optional
 
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
-from typing import List, Optional
-import uvicorn
-import logging
-
-from pinecone import Pinecone, ServerlessSpec
-
+from fastapi.staticfiles import StaticFiles
 from langchain import hub
-from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain_core.runnables import RunnablePassthrough
+from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain_openai import ChatOpenAI
+from pinecone import Pinecone, ServerlessSpec
+from pydantic import BaseModel
 
 
 
+# Initialize components
 prompt = hub.pull("rlm/rag-prompt")
-
 embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-# Initialize LLM
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 # Initialize Pinecone
@@ -80,13 +77,18 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Pydantic models
 class HealthResponse(BaseModel):
+    """Health check response model"""
     status: str
     message: str
 
+
 class CRARequest(BaseModel):
+    """CRA query request model"""
     query: str
 
+
 class CRAResponse(BaseModel):
+    """CRA query response model"""
     response: str
     confidence: Optional[float] = None
 
@@ -112,72 +114,52 @@ async def process_cra_query(request: CRARequest):
     This is a placeholder endpoint - you can implement your CRA logic here
     """
     # Log the incoming request details
-    
-    # Also use logger
-    # logger.info("=" * 50)
-    # logger.info(f"{prompt} ______________________")
-    logger.info(pc.list_indexes().names())
-    # logger.info("HI THIS IS A TEST TO SEE IF THE PINECONE INDEX IS WORKING")
+    logger.info("=" * 50)
+    logger.info("CRA QUERY REQUEST RECEIVED")
+    logger.info("=" * 50)
+    logger.info(f"Query: {request.query}")
+    logger.info(f"Available indexes: {pc.list_indexes().names()}")
 
-    index_name="cra-index"
+    index_name = "cra-index"
     dense_index = pc.Index(index_name)
-
-    # View stats for the index
-    # stats = dense_index.describe_index_stats()
-    # logger.info(stats)
-
-    # index_info = pc.describe_index("cra-index")
-    # logger.info(index_info)
     
     try:
-        # Placeholder logic - replace with your actual CRA processing
- 
-
-        # query = "What is the fundamental right protected under GDPR?"
+        # Process the query
         query = request.query
         logger.info(f"Processing query: {query}")
-        # logger.info("HI THIS IS A TEST TO SEE IF THE QUERY IS BEING RECEIVED")
-        # logger.info(query)
 
+        # Generate query embedding
         query_vector = embedding.embed_query(query)
-        # logger.info("=" * 50)
-        # logger.info("HI THIS IS A TEST TO SEE IF THE QUERY IS BEING EMBEDDED")
-        # logger.info(query_vector[:3])
-        # Format retrieved context from Pinecone
-        # context = "\n\n".join([hit["metadata"]["text"] for hit in results["matches"]])
+        logger.info("Query embedded successfully")
+
+        # Query Pinecone for relevant context
         results = dense_index.query(
-        namespace='__default__',
-        top_k=3,
-        vector=query_vector,
-        include_metadata=True)
+            namespace='__default__',
+            top_k=3,
+            vector=query_vector,
+            include_metadata=True
+        )
 
-# Format retrieved context from Pinecone
+        # Format retrieved context from Pinecone
         context = "\n\n".join([hit["metadata"]["text"] for hit in results["matches"]])
-        # logger.info("HI THIS IS A TEST TO SEE IF THE CONTEXT IS BEING RETRIEVED AND FORMATTED")
-        # logger.info(context)
+        logger.info(f"Retrieved context with {len(results['matches'])} matches")
 
+        # Format messages for LLM
         messages = prompt.format_messages(
-        question=query,
-        context=context)
+            question=query,
+            context=context
+        )
 
-        # logger.info("HI THIS IS A TEST TO SEE IF THE  PROMPT AND MESSAGES ARE BEING FORMATTED")
-        # logger.info(messages)
-
+        # Generate response using LLM
         response = llm.invoke(messages, logprobs=True)
-        logger.info("HI THIS IS A TEST TO SEE IF THE LLM RESPONSE IS BEING GENERATED")
         response_text = response.content
-        logger.info(response_text)
+        logger.info("LLM response generated successfully")
 
-        # logger.info("THIS IS A TEST TO SEE IF THE RESPONSE METADATA")
-        # logger.info(response.response_metadata)
-
+        # Calculate confidence score
         tokens = response.response_metadata["logprobs"]["content"]
         probs = [math.exp(t["logprob"]) for t in tokens]
         avg_conf = sum(probs) / len(probs)
-        logger.info(f"Average confidence: {avg_conf}")
-
-        # if request.context:
-        #     response_text += f" with context: {request.context}"
+        logger.info(f"Average confidence: {avg_conf:.3f}")
         
         # Log the response
         logger.info(f"Response generated: {response_text}")
@@ -185,13 +167,11 @@ async def process_cra_query(request: CRARequest):
         
         return CRAResponse(
             response=response_text,
-            confidence= avg_conf * 100
+            confidence=avg_conf * 100
         )
         
     except Exception as e:
         error_msg = f"Error processing CRA query: {str(e)}"
-        print(error_msg)
-        print("=" * 50)
         logger.error(error_msg)
         logger.error("=" * 50)
         raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
