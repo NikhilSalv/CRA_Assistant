@@ -1,0 +1,13 @@
+# Development dependencies for linting and code quality
+-r requirements.txt
+
+# Linting tools
+flake8==6.1.0
+black==23.12.1
+isort==5.13.2
+mypy==1.8.0
+safety==2.3.5
+
+# Additional development tools
+pre-commit==3.6.0
+pytest-cov==4.1.0

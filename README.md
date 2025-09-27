@@ -77,11 +77,70 @@ A FastAPI-based application for CRA (Clinical Research Associate) Assistant func
 CRAassistant_FastAPI/
 ├── main.py                 # FastAPI application
 ├── requirements.txt        # Python dependencies
+├── requirements-dev.txt    # Development dependencies
 ├── Dockerfile             # Docker configuration
 ├── docker-compose.yml     # Docker Compose configuration
 ├── .dockerignore          # Docker ignore file
+├── .github/workflows/     # GitHub Actions workflows
+├── .flake8                # Flake8 configuration
+├── pyproject.toml         # Project configuration
+├── .pre-commit-config.yaml # Pre-commit hooks
 └── README.md              # This file
 ```
+
+### Code Quality
+
+This project uses several tools to maintain code quality:
+
+- **Black**: Code formatter
+- **isort**: Import sorter
+- **Flake8**: Linter
+- **MyPy**: Type checker
+- **Safety**: Security vulnerability checker
+
+#### Running Linters Locally
+
+1. **Install development dependencies:**
+   ```bash
+   pip install -r requirements-dev.txt
+   ```
+
+2. **Run individual linters:**
+   ```bash
+   # Format code
+   black .
+   
+   # Sort imports
+   isort .
+   
+   # Check linting
+   flake8 .
+   
+   # Type checking
+   mypy .
+   
+   # Security check
+   safety check
+   ```
+
+3. **Set up pre-commit hooks:**
+   ```bash
+   pre-commit install
+   ```
+
+#### GitHub Actions
+
+The project includes a GitHub Actions workflow that automatically runs all linters on:
+- Push to main branch
+- Pull requests to main branch
+
+The workflow checks:
+- Code formatting (Black)
+- Import sorting (isort)
+- Linting (Flake8)
+- Type checking (MyPy)
+- Security vulnerabilities (Safety)
+- TODO/FIXME comments
 
 ### Adding New Endpoints
 
