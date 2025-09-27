@@ -17,7 +17,7 @@ sentence-transformers
 
 # Development dependencies
 flake8==6.1.0
-black==23.12.1
+black
 isort==5.13.2
 mypy==1.8.0
-safety==2.3.5
+safety
