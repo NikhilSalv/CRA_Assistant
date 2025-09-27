@@ -19,7 +19,6 @@ from langchain_openai import ChatOpenAI
 from pinecone import Pinecone, ServerlessSpec
 from pydantic import BaseModel
 
-
 # Initialize components
 prompt = hub.pull("rlm/rag-prompt")
 embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
