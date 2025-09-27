@@ -10,6 +10,18 @@ import sys
 import os
 from pinecone import Pinecone, ServerlessSpec
 
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.embeddings import HuggingFaceEmbeddings
+
+
+embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+# Initialize LLM
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+
+
 pc = Pinecone(
     api_key=os.environ["PINECONE_API_KEY"],
     environment="us-east-1"
@@ -101,18 +113,17 @@ async def process_cra_query(request: CRARequest):
     # Log the incoming request details
     
     # Also use logger
-    logger.info("=" * 50)
+    # logger.info("=" * 50)
     # logger.info(f"{prompt} ______________________")
     logger.info(pc.list_indexes().names())
-    logger.info("HI THIS IS A TEST TO SEE IF THE PINECONE INDEX IS WORKING")
+    # logger.info("HI THIS IS A TEST TO SEE IF THE PINECONE INDEX IS WORKING")
 
     index_name="cra-index"
     dense_index = pc.Index(index_name)
 
-
     # View stats for the index
     stats = dense_index.describe_index_stats()
-    logger.info(stats)
+    # logger.info(stats)
 
     # index_info = pc.describe_index("cra-index")
     # logger.info(index_info)
@@ -120,6 +131,15 @@ async def process_cra_query(request: CRARequest):
     try:
         # Placeholder logic - replace with your actual CRA processing
         response_text = f"Processing query: {request.query}"
+
+        query = "What is the fundamental right protected under GDPR?"
+
+        query_vector = embedding.embed_query(response_text)
+        logger.info("=" * 50)
+        logger.info("HI THIS IS A TEST TO SEE IF THE QUERY IS BEING EMBEDDED")
+        logger.info(query_vector[:3])
+        # Format retrieved context from Pinecone
+        # context = "\n\n".join([hit["metadata"]["text"] for hit in results["matches"]])
 
         if request.context:
             response_text += f" with context: {request.context}"

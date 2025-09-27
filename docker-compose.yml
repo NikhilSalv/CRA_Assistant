@@ -10,7 +10,7 @@ services:
       - .env 
     environment:
       - PYTHONPATH=/app
-      - ENVIRONMENT=production
+      - ENVIRONMENT=development
     volumes:
       # Mount the current directory for development (comment out for production)
       - .:/app
