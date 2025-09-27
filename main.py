@@ -135,11 +135,23 @@ async def process_cra_query(request: CRARequest):
         query = "What is the fundamental right protected under GDPR?"
 
         query_vector = embedding.embed_query(response_text)
-        logger.info("=" * 50)
-        logger.info("HI THIS IS A TEST TO SEE IF THE QUERY IS BEING EMBEDDED")
-        logger.info(query_vector[:3])
+        # logger.info("=" * 50)
+        # logger.info("HI THIS IS A TEST TO SEE IF THE QUERY IS BEING EMBEDDED")
+        # logger.info(query_vector[:3])
         # Format retrieved context from Pinecone
         # context = "\n\n".join([hit["metadata"]["text"] for hit in results["matches"]])
+        results = dense_index.query(
+        namespace='__default__',
+        top_k=3,
+        vector=query_vector,
+        include_metadata=True)
+
+# Format retrieved context from Pinecone
+        context = "\n\n".join([hit["metadata"]["text"] for hit in results["matches"]])
+        logger.info("=" * 50)
+        logger.info("HI THIS IS A TEST TO SEE IF THE CONTEXT IS BEING RETRIEVED AND FORMATTED")
+
+        logger.info(context)
 
         if request.context:
             response_text += f" with context: {request.context}"
