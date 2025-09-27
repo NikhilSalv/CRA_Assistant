@@ -1,4 +1,3 @@
-
 import json
 import logging
 import math
@@ -21,17 +20,13 @@ from pinecone import Pinecone, ServerlessSpec
 from pydantic import BaseModel
 
 
-
 # Initialize components
 prompt = hub.pull("rlm/rag-prompt")
 embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 # Initialize Pinecone
-pc = Pinecone(
-    api_key=os.environ["PINECONE_API_KEY"],
-    environment="us-east-1"
-)
+pc = Pinecone(api_key=os.environ["PINECONE_API_KEY"], environment="us-east-1")
 
 # Configure logging to work with Uvicorn
 logger = logging.getLogger("cra_assistant")
@@ -43,8 +38,7 @@ handler.setLevel(logging.INFO)
 
 # Create a formatter
 formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
 )
 handler.setFormatter(formatter)
 
@@ -60,7 +54,7 @@ logger.propagate = False
 app = FastAPI(
     title="CRA Assistant API",
     description="A FastAPI application for CRA Assistant functionality",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Add CORS middleware
@@ -75,35 +69,40 @@ app.add_middleware(
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+
 # Pydantic models
 class HealthResponse(BaseModel):
     """Health check response model"""
+
     status: str
     message: str
 
 
 class CRARequest(BaseModel):
     """CRA query request model"""
+
     query: str
 
 
 class CRAResponse(BaseModel):
     """CRA query response model"""
+
     response: str
     confidence: Optional[float] = None
+
 
 # Routes
 @app.get("/")
 async def root():
     """Serve the frontend application"""
-    return FileResponse('static/index.html')
+    return FileResponse("static/index.html")
+
 
 @app.get("/api/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint"""
     return HealthResponse(
-        status="healthy",
-        message="API is healthy and ready to serve requests"
+        status="healthy", message="API is healthy and ready to serve requests"
     )
 
 
@@ -122,7 +121,7 @@ async def process_cra_query(request: CRARequest):
 
     index_name = "cra-index"
     dense_index = pc.Index(index_name)
-    
+
     try:
         # Process the query
         query = request.query
@@ -134,10 +133,7 @@ async def process_cra_query(request: CRARequest):
 
         # Query Pinecone for relevant context
         results = dense_index.query(
-            namespace='__default__',
-            top_k=3,
-            vector=query_vector,
-            include_metadata=True
+            namespace="__default__", top_k=3, vector=query_vector, include_metadata=True
         )
 
         # Format retrieved context from Pinecone
@@ -145,10 +141,7 @@ async def process_cra_query(request: CRARequest):
         logger.info(f"Retrieved context with {len(results['matches'])} matches")
 
         # Format messages for LLM
-        messages = prompt.format_messages(
-            question=query,
-            context=context
-        )
+        messages = prompt.format_messages(question=query, context=context)
 
         # Generate response using LLM
         response = llm.invoke(messages, logprobs=True)
@@ -160,21 +153,19 @@ async def process_cra_query(request: CRARequest):
         probs = [math.exp(t["logprob"]) for t in tokens]
         avg_conf = sum(probs) / len(probs)
         logger.info(f"Average confidence: {avg_conf:.3f}")
-        
+
         # Log the response
         logger.info(f"Response generated: {response_text}")
         logger.info("=" * 50)
-        
-        return CRAResponse(
-            response=response_text,
-            confidence=avg_conf * 100
-        )
-        
+
+        return CRAResponse(response=response_text, confidence=avg_conf * 100)
+
     except Exception as e:
         error_msg = f"Error processing CRA query: {str(e)}"
         logger.error(error_msg)
         logger.error("=" * 50)
         raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
+
 
 @app.get("/cra/status")
 async def get_cra_status():
@@ -182,17 +173,9 @@ async def get_cra_status():
     return {
         "status": "operational",
         "version": "1.0.0",
-        "features": [
-            "query_processing",
-            "context_analysis",
-            "response_generation"
-        ]
+        "features": ["query_processing", "context_analysis", "response_generation"],
     }
 
+
 if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    )
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
